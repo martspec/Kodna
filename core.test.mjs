@@ -8,8 +8,7 @@ import {
   validateAnswerCodeBlocks,
   isEchoResponse,
   taskGuide,
-  secureHtml,
-  synthesizeLocalResponse
+  secureHtml
 } from './core.js';
 
 test('extractHtml extracts clean HTML from fenced blocks and strips <think> tags', () => {
@@ -43,8 +42,8 @@ test('validateHtml passes valid interactive app and catches syntax + DOM ID + ex
 
   const brokenHtml = `<!doctype html><html lang="cs"><head><title>Hra</title><script src="https://cdn.example.com/lib.js"></script></head><body><script>document.getElementById('ghost').onclick = ( => {};</script></body></html>`;
   const issues = validateHtml(brokenHtml, 'Vytvoř hru');
-  assert.ok(issues.some(i => i.includes('Externí síťový zdroj')));
-  assert.ok(issues.some(i => i.includes('Chyba syntaxe JavaScriptu')));
+  assert.ok(issues.some(i => i.includes('Externí zdroj')));
+  assert.ok(issues.some(i => i.includes('Chyba syntaxe JS')));
   assert.ok(issues.some(i => i.includes('#ghost')));
 });
 
@@ -85,27 +84,8 @@ test('secureHtml injects CSP and runtime error bridge into head', () => {
 });
 
 test('taskGuide returns specialized architecture blueprints for games, calculators, apps, and websites', () => {
-  assert.ok(taskGuide('Vytvoř hru Had').includes('INTERACTIVE GAME'));
-  assert.ok(taskGuide('Vědecká kalkulačka').includes('PRECISION CALCULATOR'));
-  assert.ok(taskGuide('Správce úkolů todo').includes('PRODUCTIVITY APPLICATION'));
-  assert.ok(taskGuide('Firemní web kavárny').includes('MODERN INTERACTIVE WEBSITE'));
-});
-
-test('synthesizeLocalResponse produces zero-error HTML apps and valid JS code blocks across all modes', () => {
-  for (const prompt of ['Vytvoř hru Pexeso', 'Vytvoř hru Had', 'Vědecká kalkulačka', 'Správce úkolů a Pomodoro', 'Vlastní evidence knih']) {
-    const out = synthesizeLocalResponse('create', prompt);
-    const html = extractHtml(out);
-    assert.ok(html, `Expected HTML for prompt: ${prompt}`);
-    const issues = validateHtml(html, prompt);
-    assert.deepEqual(issues, [], `Expected zero validation issues for ${prompt}, got: ${issues.join('; ')}`);
-  }
-
-  for (const prompt of ['Napiš v JavaScriptu funkci debounce', 'Implementuj LRUCache', 'fetchWithRetry']) {
-    const out = synthesizeLocalResponse('code', prompt);
-    assert.deepEqual(validateAnswerCodeBlocks(out), []);
-  }
-
-  const debugOut = synthesizeLocalResponse('debug', 'for (var i = 0; i < 3; i++) { setTimeout(() => console.log(i), 1000); }');
-  assert.ok(debugOut.includes('Příčina chyby'));
-  assert.deepEqual(validateAnswerCodeBlocks(debugOut), []);
+  assert.ok(taskGuide('Vytvoř hru Had').includes('GAME'));
+  assert.ok(taskGuide('Vědecká kalkulačka').includes('CALCULATOR/TOOL'));
+  assert.ok(taskGuide('Správce úkolů todo').includes('APPLICATION'));
+  assert.ok(taskGuide('Firemní web kavárny').includes('WEBSITE'));
 });

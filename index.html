@@ -16,16 +16,16 @@
     <div class="label">TVŮJ PRACOVNÍ PROSTOR</div>
     <nav aria-label="Režimy dílny">
       <button type="button" class="mode active" data-mode="create" aria-label="Tvůrce her a aplikací">✦ <span>Tvůrce</span><small>01</small></button>
-      <button type="button" class="mode" data-mode="general" aria-label="Univerzální asistent">◈ <span>Asistent</span><small>02</small></button>
-      <button type="button" class="mode" data-mode="code" aria-label="Inženýr kódu">⌘ <span>Kód</span><small>03</small></button>
-      <button type="button" class="mode" data-mode="debug" aria-label="Ladění a opravy chyb">⌕ <span>Ladění</span><small>04</small></button>
-      <button type="button" class="mode" data-mode="write" aria-label="Psaní a stylistika">✎ <span>Psaní</span><small>05</small></button>
+      <button type="button" class="mode" data-mode="general" aria-label="Asistent">◈ <span>Asistent</span><small>02</small></button>
+      <button type="button" class="mode" data-mode="code" aria-label="Kód">⌘ <span>Kód</span><small>03</small></button>
+      <button type="button" class="mode" data-mode="debug" aria-label="Ladění">⌕ <span>Ladění</span><small>04</small></button>
+      <button type="button" class="mode" data-mode="write" aria-label="Psaní">✎ <span>Psaní</span><small>05</small></button>
     </nav>
     <div class="local-note">
       <span class="dot"></span> Výpočty zůstávají u tebe
-      <p>Žádný API klíč. Žádné odesílání konverzací na AI server. Kontrola syntaxe a DOM běží lokálně.</p>
+      <p>Žádný API klíč. Žádné odesílání konverzací na AI server.</p>
     </div>
-    <div class="bottom">OSOBNÍ AI DÍLNA <span>v2.0</span></div>
+    <div class="bottom">OSOBNÍ AI DÍLNA <span>v1.1</span></div>
   </aside>
   <main>
     <header>
@@ -34,30 +34,30 @@
         <span class="slash">/</span>
         <span id="section">Tvůrce her a aplikací</span>
       </div>
-      <span class="badge ready" id="status">● AI připravena (Lokální expert)</span>
+      <span class="badge" id="status">○ Model není načtený</span>
     </header>
     <div class="workspace">
       <section class="intro" id="intro">
         <div class="eyebrow" id="introEyebrow">MALÁ DÍLNA. VELKÉ NÁPADY.</div>
         <h1 id="introHeading">Tvůj AI<br><em>tvůrce.</em></h1>
-        <p id="introLead">Popiš hru, nástroj nebo web. Kódovna navrhne architekturu, napíše čistý kód, zkontroluje syntaxi i DOM a ukáže živý náhled.</p>
+        <p id="introLead">Popiš hru nebo aplikaci. Kódovna ji vytvoří, zkontroluje a ukáže náhled.<br>Výsledný soubor můžeš stáhnout a otevřít samostatně.</p>
         <div class="cards" id="cards">
-          <button type="button" data-prompt="Vytvoř hru Pexeso (4×4 karty se symboly) v jednom HTML souboru. Přidej počítadlo tahů, časomíru, zobrazení vítězství a tlačítko Nová hra.">
-            <span>✦</span>
-            <b>Hra Pexeso se skóre</b>
-            <small>Kompletní hratelná hra s počítadlem tahů a časomírou</small>
-            <i>↗</i>
-          </button>
-          <button type="button" data-prompt="Vytvoř moderní vědeckou kalkulačku s historií posledních výpočtů, podporou klávesnice a ošetřením dělení nulou.">
+          <button type="button" data-prompt="Napiš v JavaScriptu funkci debounce a vysvětli její použití.">
             <span>⌘</span>
-            <b>Chytrá kalkulačka a převodník</b>
-            <small>Okamžité výpočty, historie a podpora klávesnice</small>
+            <b>Napiš se mnou kód</b>
+            <small>Od prvního řádku k funkčnímu řešení</small>
             <i>↗</i>
           </button>
-          <button type="button" data-prompt="Vytvoř aplikaci pro správu úkolů s filtrováním (Vše, Aktivní, Hotové), počítadlem splněných úkolů, ukázkovými daty a vestavěným Pomodoro časovačem.">
-            <span>◈</span>
-            <b>Správce úkolů a Pomodoro</b>
-            <small>Produktivní aplikace s filtry, statistikou a časovačem</small>
+          <button type="button" data-prompt="Pomoz mi najít chybu v kódu. Nejprve mě požádej o kód a chybovou hlášku.">
+            <span>⌕</span>
+            <b>Najdi, kde je chyba</b>
+            <small>Vysvětlení i návrh opravy</small>
+            <i>↗</i>
+          </button>
+          <button type="button" data-prompt="Pomoz mi napsat srozumitelný text. Nejprve se zeptej na téma a čtenáře.">
+            <span>✎</span>
+            <b>Dej slovům tvar</b>
+            <small>Texty, které dávají smysl</small>
             <i>↗</i>
           </button>
         </div>
@@ -93,39 +93,38 @@
           <span class="chip">✦</span>
           <div>
             <b>Tvůj model, tvůj počítač.</b>
-            <p id="loadtext" role="status">Připraveno. Okamžité lokální jádro je aktivní — můžeš rovnou tvořit nebo načíst WebGPU model.</p>
+            <p id="loadtext" role="status">První spuštění stáhne model. Může to trvat několik minut.</p>
           </div>
         </div>
         <div class="setup-controls">
           <select id="model" aria-label="AI model">
-            <option value="kodovna-local-expert-v2" selected>Kódovna Expert · Okamžité lokální jádro (bez stahování)</option>
-            <option value="Qwen2.5-Coder-7B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 7B (WebGPU · nejvyšší kvalita kódu)</option>
-            <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen 2.5 · 7B (WebGPU · nejlepší odpovědi a čeština)</option>
-            <option value="Qwen2.5-Coder-3B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 3B (WebGPU · vyvážený pro kód)</option>
-            <option value="Qwen2.5-3B-Instruct-q4f16_1-MLC">Qwen 2.5 · 3B (WebGPU · univerzální)</option>
-            <option value="Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 1.5B (WebGPU · rychlý)</option>
-            <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">Qwen 2.5 · 1.5B (WebGPU · rychlý univerzální)</option>
-            <option value="Qwen2.5-Coder-0.5B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 0.5B (WebGPU · úsporný)</option>
+            <option value="Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC" selected>Qwen 2.5 Coder · 1.5B (doporučený)</option>
+            <option value="Qwen2.5-Coder-3B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 3B (vyšší kvalita kódu)</option>
+            <option value="Qwen2.5-Coder-7B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 7B (pro výkonné GPU)</option>
+            <option value="Qwen2.5-Coder-0.5B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 0.5B (lehký)</option>
+            <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">Qwen 2.5 · 1.5B (univerzální)</option>
+            <option value="Qwen2.5-3B-Instruct-q4f16_1-MLC">Qwen 2.5 · 3B (univerzální · vyšší kvalita)</option>
+            <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen 2.5 · 7B (univerzální · nejvyšší kvalita)</option>
           </select>
           <button id="load" type="button">Spustit AI <span>↗</span></button>
         </div>
         <progress id="progress" max="1" value="0" hidden></progress>
-        <small>Každý vygenerovaný projekt prochází automatickou kontrolou syntaxe JavaScriptu, propojení DOM elementů a bezpečnostních pravidel CSP. Modely Qwen 3B/7B vyžadují WebGPU.</small>
+        <small>Menší modely běží na více zařízeních, modely 3B/7B píší přesnější kód a odpovědi. Vyžaduje WebGPU; internet je potřeba ke stažení aplikace a modelu. Generování i náhled pak běží v tomto prohlížeči.</small>
       </section>
 
       <form id="form">
-        <textarea id="prompt" rows="3" maxlength="6000" aria-label="Zadání" placeholder="Co dnes vytvoříme? Např.: Vytvoř hru Had se skóre, rychlostními úrovněmi a pauzou…"></textarea>
+        <textarea id="prompt" rows="3" maxlength="6000" aria-label="Zadání" placeholder="Co dnes vytvoříme? Napiš zadání nebo vlož kód…"></textarea>
         <div class="composer-bottom">
-          <span><span class="dot"></span> Jen v tomto prohlížeči · Automatický audit kódu</span>
+          <span><span class="dot"></span> Jen v tomto prohlížeči</span>
           <div>
             <button type="button" id="stop" hidden>Zastavit</button>
-            <button type="submit" id="send">Odeslat ↑</button>
+            <button type="submit" id="send" disabled>Odeslat ↑</button>
           </div>
         </div>
       </form>
 
       <footer>
-        <span>Kód je automaticky ověřen na syntaktické chyby a chybějící DOM ID.</span>
+        <span>AI může chybovat. Vygenerovaný kód je automaticky kontrolován na chyby syntaxe a DOM.</span>
         <button id="export" type="button">↓ Export konverzace</button>
       </footer>
 
