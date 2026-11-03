@@ -7,7 +7,8 @@
     "dev": "node server.js",
     "build": "echo 'Static site - no build step required'",
     "start": "node server.js",
-    "lint": "node --check server.js && node --check app.js && node --check worker.js"
+    "test": "node --test core.test.mjs",
+    "lint": "node --check server.js && node --check core.js && node --check app.js && node --check worker.js && node --test core.test.mjs"
   },
   "dependencies": {
     "express": "^5.3.0"
