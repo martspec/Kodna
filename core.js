@@ -1,96 +1,38 @@
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 
-export const MODE_META = {
-  create: {
-    title: 'Tvůrce her a aplikací',
-    eyebrow: 'MALÁ DÍLNA. VELKÉ NÁPADY.',
-    headingPlain: 'Tvůj AI',
-    headingEm: 'tvůrce.',
-    lead: 'Popiš hru nebo aplikaci. Kódovna ji vytvoří, zkontroluje syntaxi i DOM a ukáže živý náhled. Výsledný soubor můžeš stáhnout a otevřít samostatně.',
-    placeholder: 'Co dnes vytvoříme? Napiš zadání nebo vlož kód…',
-    temperature: 0.2,
-    maxTokens: 2560,
-    cards: [
-      {
-        icon: '⌘',
-        title: 'Napiš se mnou kód',
-        sub: 'Od prvního řádku k funkčnímu řešení',
-        prompt: 'Napiš v JavaScriptu funkci debounce a vysvětli její použití.'
-      },
-      {
-        icon: '⌕',
-        title: 'Najdi, kde je chyba',
-        sub: 'Vysvětlení i návrh opravy',
-        prompt: 'Pomoz mi najít chybu v kódu. Nejprve mě požádej o kód a chybovou hlášku.'
-      },
-      {
-        icon: '✎',
-        title: 'Dej slovům tvar',
-        sub: 'Texty, které dávají smysl',
-        prompt: 'Pomoz mi napsat srozumitelný text. Nejprve se zeptej na téma a čtenáře.'
-      }
-    ]
-  },
-  general: {
-    title: 'Asistent',
-    eyebrow: 'MALÁ DÍLNA. VELKÉ NÁPADY.',
-    headingPlain: 'Tvůj AI',
-    headingEm: 'asistent.',
-    lead: 'Zeptej se na cokoliv — vysvětlení pojmů, výpočty, plánování nebo rozbor problému. Odpověď vzniká přímo ve tvém prohlížeči.',
-    placeholder: 'Na co se chceš zeptat? Napiš dotaz nebo úkol…',
-    temperature: 0.3,
-    maxTokens: 2048
-  },
-  code: {
-    title: 'Kód',
-    eyebrow: 'MALÁ DÍLNA. VELKÉ NÁPADY.',
-    headingPlain: 'Tvůj AI',
-    headingEm: 'kodér.',
-    lead: 'Nech si napsat kompletní funkce, algoritmy nebo komponenty s vysvětlením a kontrolou syntaxe.',
-    placeholder: 'Jaký kód potřebuješ napsat nebo vysvětlit?',
-    temperature: 0.15,
-    maxTokens: 2560
-  },
-  debug: {
-    title: 'Ladění',
-    eyebrow: 'MALÁ DÍLNA. VELKÉ NÁPADY.',
-    headingPlain: 'Tvůj AI',
-    headingEm: 'diagnostik.',
-    lead: 'Vlož kód a chybovou hlášku. Kódovna najde příčinu chyby, vysvětlí ji a navrhne kompletní opravu.',
-    placeholder: 'Vlož nefunkční kód a chybovou hlášku…',
-    temperature: 0.15,
-    maxTokens: 2560
-  },
-  write: {
-    title: 'Psaní',
-    eyebrow: 'MALÁ DÍLNA. VELKÉ NÁPADY.',
-    headingPlain: 'Tvůj AI',
-    headingEm: 'redaktor.',
-    lead: 'Tvoř srozumitelné e-maily, články, dokumentaci nebo texty na web v přirozené češtině.',
-    placeholder: 'Jaký text potřebuješ napsat nebo upravit?',
-    temperature: 0.6,
-    maxTokens: 2048
+export function formatError(err) {
+  if (!err) return 'Neznámá chyba WebGPU nebo modelu.';
+  if (typeof err === 'string') return err;
+  if (typeof err.message === 'string' && err.message.trim()) return err.message.trim();
+  try {
+    const str = String(err);
+    return str && str !== '[object Object]' ? str : JSON.stringify(err);
+  } catch {
+    return 'Neznámá chyba při generování.';
   }
-};
-
-export const SYSTEM_PROMPTS = {
-  create:
-    'You are Kódovna, a precise local web-app creator. Turn the user request into a complete, working single-file HTML5 document (<!doctype html><html lang="cs">...</html>) with inline <style> and <script>. Every element ID referenced in JS (getElementById/querySelector) must exist in the HTML. Never leave TODO placeholders. Implement working controls, responsive layout, and clean Czech UI text. Do not use external libraries, CDN links, remote assets, or network calls. For revisions, preserve the existing project and apply the requested change.',
-  general:
-    'You are Kódovna, an accurate, capable Czech AI assistant. Answer the user request directly and thoroughly. Never substitute a generic greeting for an answer or repeat the question. Verify calculations and logic step by step. Use clear structure (headings, bullet points, examples) for longer answers.',
-  code:
-    'You are Kódovna, a senior programming assistant. Write complete, runnable, idiomatic code with edge-case handling and zero TODO placeholders. Explain key decisions concisely and include a usage example.',
-  debug:
-    'You are Kódovna, a debugging specialist. Pinpoint the exact root cause of the bug, provide the complete fixed code, and briefly explain why the fix works. If code or error details are missing, ask for them concisely.',
-  write:
-    'You are Kódovna, a Czech writing and editing assistant. Write clear, natural, idiomatic Czech text adapted to the target audience and purpose.'
-};
+}
 
 export function normalizeCz(text) {
   return (text || '')
     .toLocaleLowerCase('cs')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+export function detectEffectiveMode(selectedMode, input) {
+  if (selectedMode !== 'create') return selectedMode;
+  const q = normalizeCz(input);
+  // If user is in 'create' mode but clicked or typed a prompt clearly asking for text, debugging, or a single JS function explanation
+  if (/pomoz mi napsat srozumitelny text|zeptej na tema a ctenare|napis email|napis clanek|prepis text/.test(q)) {
+    return 'write';
+  }
+  if (/pomoz mi najit chybu v kodu|chybovou hlasku|proc tento kod nefunguje|oprav chybu v tomto/.test(q)) {
+    return 'debug';
+  }
+  if (/napis v javascriptu funkci|vysvetli jeji pouziti|co je to |jak funguje /.test(q) && !/html|aplikac|hra|hru|web|strank/.test(q)) {
+    return 'code';
+  }
+  return 'create';
 }
 
 export function taskGuide(input) {
@@ -172,7 +114,6 @@ export function checkMissingDomIds(html) {
     definedIds.add(match[1]);
   }
 
-  // If script uses innerHTML/insertAdjacentHTML with dynamic id=, don't flag IDs created there
   const missing = [];
   const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
   let scriptMatch;
@@ -255,18 +196,6 @@ export function validateHtml(html, request = '') {
   }
 
   return issues;
-}
-
-export function inspectHtmlMetrics(html) {
-  const scripts = [...(html || '').matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
-  const jsLines = scripts.reduce((acc, m) => acc + m[1].trim().split('\n').length, 0);
-  const controls = ((html || '').match(/<(?:button|input|select|textarea|canvas)\b/gi) || []).length;
-  const titleMatch = (html || '').match(/<title\b[^>]*>([^<]+)<\/title>/i);
-  return {
-    title: titleMatch ? titleMatch[1].trim() : 'Můj projekt',
-    jsLines,
-    controls
-  };
 }
 
 export function validateAnswerCodeBlocks(markdown) {

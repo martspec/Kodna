@@ -16,16 +16,16 @@
     <div class="label">TVŮJ PRACOVNÍ PROSTOR</div>
     <nav aria-label="Režimy dílny">
       <button type="button" class="mode active" data-mode="create" aria-label="Tvůrce her a aplikací">✦ <span>Tvůrce</span><small>01</small></button>
-      <button type="button" class="mode" data-mode="general" aria-label="Asistent">◈ <span>Asistent</span><small>02</small></button>
-      <button type="button" class="mode" data-mode="code" aria-label="Kód">⌘ <span>Kód</span><small>03</small></button>
-      <button type="button" class="mode" data-mode="debug" aria-label="Ladění">⌕ <span>Ladění</span><small>04</small></button>
-      <button type="button" class="mode" data-mode="write" aria-label="Psaní">✎ <span>Psaní</span><small>05</small></button>
+      <button type="button" class="mode" data-mode="general">◈ <span>Asistent</span><small>02</small></button>
+      <button type="button" class="mode" data-mode="code">⌘ <span>Kód</span><small>03</small></button>
+      <button type="button" class="mode" data-mode="debug">⌕ <span>Ladění</span><small>04</small></button>
+      <button type="button" class="mode" data-mode="write">✎ <span>Psaní</span><small>05</small></button>
     </nav>
     <div class="local-note">
       <span class="dot"></span> Výpočty zůstávají u tebe
       <p>Žádný API klíč. Žádné odesílání konverzací na AI server.</p>
     </div>
-    <div class="bottom">OSOBNÍ AI DÍLNA <span>v1.1</span></div>
+    <div class="bottom">OSOBNÍ AI DÍLNA <span>v1.2</span></div>
   </aside>
   <main>
     <header>
@@ -38,23 +38,23 @@
     </header>
     <div class="workspace">
       <section class="intro" id="intro">
-        <div class="eyebrow" id="introEyebrow">MALÁ DÍLNA. VELKÉ NÁPADY.</div>
-        <h1 id="introHeading">Tvůj AI<br><em>tvůrce.</em></h1>
-        <p id="introLead">Popiš hru nebo aplikaci. Kódovna ji vytvoří, zkontroluje a ukáže náhled.<br>Výsledný soubor můžeš stáhnout a otevřít samostatně.</p>
-        <div class="cards" id="cards">
-          <button type="button" data-prompt="Napiš v JavaScriptu funkci debounce a vysvětli její použití.">
+        <div class="eyebrow">MALÁ DÍLNA. VELKÉ NÁPADY.</div>
+        <h1>Tvůj AI<br><em>tvůrce.</em></h1>
+        <p>Popiš hru nebo aplikaci. Kódovna ji vytvoří, zkontroluje a ukáže náhled.<br>Výsledný soubor můžeš stáhnout a otevřít samostatně.</p>
+        <div class="cards">
+          <button type="button" data-mode-target="code" data-prompt="Napiš v JavaScriptu funkci debounce a vysvětli její použití.">
             <span>⌘</span>
             <b>Napiš se mnou kód</b>
             <small>Od prvního řádku k funkčnímu řešení</small>
             <i>↗</i>
           </button>
-          <button type="button" data-prompt="Pomoz mi najít chybu v kódu. Nejprve mě požádej o kód a chybovou hlášku.">
+          <button type="button" data-mode-target="debug" data-prompt="Pomoz mi najít chybu v kódu. Nejprve mě požádej o kód a chybovou hlášku.">
             <span>⌕</span>
             <b>Najdi, kde je chyba</b>
             <small>Vysvětlení i návrh opravy</small>
             <i>↗</i>
           </button>
-          <button type="button" data-prompt="Pomoz mi napsat srozumitelný text. Nejprve se zeptej na téma a čtenáře.">
+          <button type="button" data-mode-target="write" data-prompt="Pomoz mi napsat srozumitelný text. Nejprve se zeptej na téma a čtenáře.">
             <span>✎</span>
             <b>Dej slovům tvar</b>
             <small>Texty, které dávají smysl</small>
@@ -98,18 +98,16 @@
         </div>
         <div class="setup-controls">
           <select id="model" aria-label="AI model">
-            <option value="Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC" selected>Qwen 2.5 Coder · 1.5B (doporučený)</option>
-            <option value="Qwen2.5-Coder-3B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 3B (vyšší kvalita kódu)</option>
-            <option value="Qwen2.5-Coder-7B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 7B (pro výkonné GPU)</option>
-            <option value="Qwen2.5-Coder-0.5B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 0.5B (lehký)</option>
+            <option value="Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC" selected>Qwen 2.5 Coder · 1.5B</option>
+            <option value="Qwen2.5-Coder-0.5B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 0.5B (lehký · vhodný pro mobil)</option>
             <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">Qwen 2.5 · 1.5B (univerzální)</option>
-            <option value="Qwen2.5-3B-Instruct-q4f16_1-MLC">Qwen 2.5 · 3B (univerzální · vyšší kvalita)</option>
-            <option value="Qwen2.5-7B-Instruct-q4f16_1-MLC">Qwen 2.5 · 7B (univerzální · nejvyšší kvalita)</option>
+            <option value="Qwen2.5-Coder-3B-Instruct-q4f16_1-MLC">Qwen 2.5 Coder · 3B (vyšší kvalita · PC)</option>
+            <option value="Qwen2.5-3B-Instruct-q4f16_1-MLC">Qwen 2.5 · 3B (univerzální · PC)</option>
           </select>
           <button id="load" type="button">Spustit AI <span>↗</span></button>
         </div>
         <progress id="progress" max="1" value="0" hidden></progress>
-        <small>Menší modely běží na více zařízeních, modely 3B/7B píší přesnější kód a odpovědi. Vyžaduje WebGPU; internet je potřeba ke stažení aplikace a modelu. Generování i náhled pak běží v tomto prohlížeči.</small>
+        <small>Menší modely běží na více zařízeních, ale složitější aplikace mohou vytvořit chybně. Vyžaduje WebGPU; internet je potřeba ke stažení aplikace a modelu. Generování i náhled pak běží v tomto prohlížeči.</small>
       </section>
 
       <form id="form">
@@ -124,8 +122,11 @@
       </form>
 
       <footer>
-        <span>AI může chybovat. Vygenerovaný kód je automaticky kontrolován na chyby syntaxe a DOM.</span>
-        <button id="export" type="button">↓ Export konverzace</button>
+        <span>AI může chybovat. Vygenerovaný kód si vždy ověř.</span>
+        <div style="display:flex;gap:14px;align-items:center">
+          <a href="kodovna-github-pages.zip" download="kodovna-github-pages.zip" style="color:#5c6d4f;text-decoration:none;font-weight:600">↓ Stáhnout ZIP pro GitHub Pages</a>
+          <button id="export" type="button">↓ Export konverzace</button>
+        </div>
       </footer>
 
       <details>

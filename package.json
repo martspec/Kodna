@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "build": "echo 'Static site - no build step required'",
+    "build": "python3 -c \"import zipfile; z=zipfile.ZipFile('kodovna-github-pages.zip','w',zipfile.ZIP_DEFLATED); [z.write(f) for f in ['index.html','app.js','style.css','worker.js','README.md','.nojekyll','.github/workflows/deploy.yml']]; z.close()\"",
     "start": "node server.js",
     "test": "node --test core.test.mjs",
     "lint": "node --check server.js && node --check core.js && node --check app.js && node --check worker.js && node --test core.test.mjs"

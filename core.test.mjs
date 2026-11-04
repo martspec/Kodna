@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  formatError,
+  detectEffectiveMode,
   extractHtml,
   validateHtml,
   checkJsSyntax,
@@ -10,6 +12,31 @@ import {
   taskGuide,
   secureHtml
 } from './core.js';
+
+test('formatError handles WebLLM string rejections without returning undefined', () => {
+  assert.equal(formatError('DeviceLostError: WebGPU device lost'), 'DeviceLostError: WebGPU device lost');
+  assert.equal(formatError(new Error('Out of memory')), 'Out of memory');
+  assert.ok(formatError(null).includes('Neznámá chyba'));
+});
+
+test('detectEffectiveMode routes non-HTML starter prompts to the right mode when user is in create mode', () => {
+  assert.equal(
+    detectEffectiveMode('create', 'Pomoz mi napsat srozumitelný text. Nejprve se zeptej na téma a čtenáře.'),
+    'write'
+  );
+  assert.equal(
+    detectEffectiveMode('create', 'Pomoz mi najít chybu v kódu. Nejprve mě požádej o kód a chybovou hlášku.'),
+    'debug'
+  );
+  assert.equal(
+    detectEffectiveMode('create', 'Napiš v JavaScriptu funkci debounce a vysvětli její použití.'),
+    'code'
+  );
+  assert.equal(
+    detectEffectiveMode('create', 'Vytvoř hru Pexeso v HTML'),
+    'create'
+  );
+});
 
 test('extractHtml extracts clean HTML from fenced blocks and strips <think> tags', () => {
   const raw = `<think>Nejprve navrhnu strukturu...</think>\nZde je projekt:\n\`\`\`html\n<!doctype html><html lang="cs"><head><title>Test</title></head><body><button id="b">Klik</button></body></html>\n\`\`\`\nHotovo.`;
