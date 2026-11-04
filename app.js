@@ -11,20 +11,20 @@ let latestProject = null;
 
 const PROJECT_KEY = 'kodovna-last-project-v1';
 const INSTRUCTIONS_KEY = 'kodovna-instructions-v1';
-const MODEL_KEY = 'kodovna-model-v1';
+const MODEL_KEY = 'kodovna-model-v2';
 const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
 
 const prompts = {
   create:
-    'You are Kódovna, a local web-app creator. Turn the user request into a complete, working static single-file HTML5 document (<!doctype html><html lang="cs">...</html>) with inline <style> and <script>. Every element ID referenced in JS (getElementById/querySelector) must exist in the HTML. Implement working controls, responsive layout, and Czech UI text unless asked otherwise. Do not use external libraries, CDN links, network APIs, or remote assets. For revisions, preserve the existing project and apply the requested change. Output only the complete HTML document.',
+    'Jsi Kódovna, lokální tvůrce webových aplikací a her. Ze zadání uživatele vytvoř kompletní, plně funkční statický HTML5 dokument v jednom souboru (<!doctype html><html lang="cs">...</html>) s vloženým <style> a <script>. Každé ID použité v JavaScriptu (getElementById/querySelector) musí existovat v HTML. Vytvoř funkční ovládací prvky, responzivní vzhled a české texty rozhraní. Nepoužívej žádné externí knihovny, CDN odkazy ani síťová volání. Vypiš pouze samotný HTML dokument.',
   general:
-    'You are Kódovna, a capable general-purpose Czech AI assistant. Help with any reasonable task: answer questions, explain ideas, brainstorm, plan, summarize, translate, write, calculate, and create or review code. Address the user request directly in Czech. Never substitute a generic greeting for an answer or repeat the question. If important information is missing, ask one short clarifying question. Use clear structure for longer answers.',
+    'Jsi Kódovna, přátelský a věcný český AI asistent běžící přímo v prohlížeči uživatele. Odpovídej přirozenou, spisovnou a srozumitelnou češtinou. Na pozdrav nebo běžnou konverzaci odpověz přirozeně a přátelsky. U odborných dotazů jdi rovnou k věci, používej přehledné odrážky a nevymýšlej si neexistující slova ani fakta.',
   code:
-    'You are Kódovna, a senior programming assistant. Write practical, complete, runnable code without TODO placeholders, explain important decisions concisely in Czech, and handle edge cases.',
+    'Jsi Kódovna, zkušený programátorský asistent. Piš čistý, kompletní a spustitelný kód bez nedodělaných TODO míst. Vysvětlení piš stručně a srozumitelně v češtině.',
   debug:
-    'You are Kódovna, a debugging assistant. If code or error details are missing, ask for the code snippet and exact error message in Czech. When code is provided, explain the root cause and provide the complete fixed code.',
+    'Jsi Kódovna, asistent pro ladění kódu. Pokud uživatel ještě neposlal kód nebo chybovou hlášku, stručně ho o ně česky požádej. Když kód pošle, vysvětli příčinu chyby a uveď kompletní opravený kód.',
   write:
-    'You are Kódovna, a Czech writing assistant. Write clear, natural Czech text adapted to the requested audience. Ask concisely for topic and audience when missing.'
+    'Jsi Kódovna, český redaktor a textař. Piš přirozenou, gramaticky čistou a čtivou češtinou. Nepoužívej strojové překlady ani vymyšlená slova. Pokud v zadání chybí téma nebo komu je text určený, krátce a přirozeně se zeptej.'
 };
 
 const MODE_LABELS = {
@@ -56,7 +56,14 @@ export function normalizeCz(text) {
 
 export function detectEffectiveMode(selectedMode, input) {
   if (selectedMode !== 'create') return selectedMode;
-  const q = normalizeCz(input);
+  const q = normalizeCz(input).trim();
+  if (
+    /^(ahoj|cau|zdar|dobry den|zdravim|jak se mas|jak je|kdo jsi|co jsi zac|co umis|jak fungujes|diky|dekuji|pomoc)[?!.\s]*$/.test(
+      q
+    )
+  ) {
+    return 'general';
+  }
   if (
     /pomoz mi napsat srozumitelny text|zeptej na tema a ctenare|napis email|napis clanek|prepis text/.test(
       q
@@ -80,10 +87,109 @@ export function detectEffectiveMode(selectedMode, input) {
   return 'create';
 }
 
+export function getInstantCzechReply(effectiveMode, input) {
+  const raw = (input || '').trim();
+  const q = normalizeCz(raw)
+    .replace(/[?!.,;:'"„“()\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!q) return null;
+
+  if (/^(ahoj|cau|zdar|nazdar|dobry den|zdravim|hezk[y] den)(\s+jak se mas|\s+kodovno)?$/.test(q)) {
+    return 'Ahoj! Jsem připravená v tvém prohlížeči. S čím ti dnes pomohu — chceš napsat text, zkontrolovat kód, nebo vytvořit aplikaci?';
+  }
+  if (/^(jak se mas|jak se dari|jak je|jak to jde|co delas)$/.test(q)) {
+    return 'Mám se skvěle, děkuji za optání! Běžím přímo u tebe v prohlížeči a jsem připravená pomoct. Na čem dnes budeme pracovat — chceš napsat text, poradit s kódem, nebo vytvořit aplikaci?';
+  }
+  if (/^(kdo jsi|co jsi zac|co jsi|predstav se)$/.test(q)) {
+    return 'Jsem **Kódovna** — tvoje osobní lokální AI dílna. Běžím přímo ve tvém prohlížeči přes WebGPU, takže tvoje texty ani kód nikam na cizí servery neodcházejí.\n\nUmím:\n- **✦ Tvůrce:** vytvořit funkční hru nebo webovou aplikaci v jednom HTML souboru\n- **◈ Asistent:** odpovídat na otázky, vysvětlovat a plánovat\n- **⌘ Kód & ⌕ Ladění:** psát funkce a opravovat chyby v kódu\n- **✎ Psaní:** psát a upravovat srozumitelné české texty';
+  }
+  if (/^(co umis|jak fungujes|s cim mi pomuzes|pomoc)$/.test(q)) {
+    return 'Pomůžu ti s těmito úkoly přímo ve tvém prohlížeči:\n\n1. **Psaní textů (✎ Psaní):** e-maily, články, shrnutí i úpravy stylu.\n2. **Programování (⌘ Kód / ⌕ Ladění):** psaní funkcí, vysvětlení kódu a hledání chyb.\n3. **Tvorba miniaplikací (✦ Tvůrce):** kompletní HTML5 hry, kalkulačky a nástroje s okamžitým náhledem.\n\nNapiš mi, co potřebuješ vytvořit nebo vyřešit!';
+  }
+  if (/^(diky|dekuji|mockrat dekuji|super diky|skvele diky)$/.test(q)) {
+    return 'Rádo se stalo! Kdybys potřeboval cokoliv dalšího upravit nebo napsat, stačí napsat.';
+  }
+
+  if (q === 'pomoz mi napsat srozumitelny text nejprve se zeptej na tema a ctenare') {
+    return 'Ráda ti pomohu napsat čtivý a srozumitelný text. Aby přesně seděl tvému záměru, napiš mi prosím:\n\n1. **O jaké téma jde?** (Co je hlavní myšlenka nebo sdělení?)\n2. **Kdo bude text číst?** (Zákazníci, kolegové, přátelé, nebo široká veřejnost?)\n3. **Jakou formu a tón potřebuješ?** (Např. krátký e-mail, příspěvek na web, formální či přátelský tón.)';
+  }
+  if (q === 'pomoz mi najit chybu v kodu nejprve me pozadej o kod a chybovou hlasku') {
+    return 'Jdeme na to. Pošli mi prosím:\n\n1. **Ukázku kódu**, ve které problém nastává.\n2. **Přesnou chybovou hlášku** z konzole (nebo popiš, co kód dělá špatně oproti očekávání).\n\nHned ti vysvětlím příčinu chyby a pošlu opravené řešení.';
+  }
+  if (q === 'napis v javascriptu funkci debounce a vysvetli jeji pouziti') {
+    return `Funkce \`debounce\` odloží spuštění předané funkce až na chvíli, kdy uživatel přestane akci opakovat po zadanou dobu (\`delay\`). Hodí se například pro vyhledávací pole při psaní (\`input\`) nebo při změně velikosti okna (\`resize\`), aby se náročná operace nespouštěla při každém stisku klávesy.
+
+\`\`\`javascript
+function debounce(fn, delay = 300) {
+  let timerId = null;
+
+  return function (...args) {
+    const context = this;
+    clearTimeout(timerId);
+    timerId = setTimeout(() => {
+      fn.apply(context, args);
+    }, delay);
+  };
+}
+
+// Příklad použití u vyhledávacího pole:
+const handleSearch = debounce((query) => {
+  console.log('Hledám výraz:', query);
+}, 300);
+
+// Při rychlém psaní se zavolá až 300 ms po posledním znaku:
+// inputElement.addEventListener('input', (e) => handleSearch(e.target.value));
+\`\`\`
+
+**Jak to funguje:**
+- Při každém zavolání \`clearTimeout(timerId)\` zruší předchozí čekající časovač.
+- Nový \`setTimeout\` spustí cílovou funkci \`fn\` teprve tehdy, když po dobu \`delay\` milisekund nepřijde žádné další volání.`;
+  }
+
+  return null;
+}
+
+export function hasCorruptedCzech(text) {
+  if (!text) return false;
+  const q = normalizeCz(text);
+  if (
+    /vyskytnuteln|vyslovan|umeteln|google translate|jazykove preklad|spravnim pripadem|vykonem vice informaci/.test(
+      q
+    )
+  ) {
+    return true;
+  }
+  if (/[\u4e00-\u9fff]{2,}/.test(text)) {
+    return true;
+  }
+  return false;
+}
+
 export function cleanModelOutput(text) {
   if (!text) return '';
   let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   cleaned = cleaned.replace(/^<think>/i, '').trim();
+  return cleaned;
+}
+
+export function stripLeadingEcho(input, answer) {
+  const cleaned = cleanModelOutput(answer);
+  const rawInput = (input || '').trim();
+  if (!cleaned || !rawInput || rawInput.length < 3) return cleaned;
+
+  const escaped = rawInput
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+');
+  const prefixRegex = new RegExp(
+    `^(?:(?:otazka|otázka|dotaz|zadani|zadání|user|ty)\\s*:\\s*)?["„“']?${escaped}["„“']?[?!.:;\\-–—]*\\s+(?:(?:odpoved|odpověď)\\s*:\\s*)?([\\s\\S]+)$`,
+    'i'
+  );
+  const match = cleaned.match(prefixRegex);
+  if (match && match[1] && match[1].trim().length > 0) {
+    return match[1].trim();
+  }
   return cleaned;
 }
 
@@ -129,15 +235,18 @@ export function extractHtml(text) {
 export function taskGuide(input) {
   const q = normalizeCz(input);
   if (/hra|herni|tetris|had|snake|pexeso|skore|arkanoid|pong|flappy|skakac|piskvork|minolovka|2048|kviz/.test(q)) {
-    return ' Task type: GAME. Create a playable loop with clear start/restart, visible score or progress, and keyboard or touch controls. Keep the rules simple and testable.';
+    return ' Typ úkolu: HRA. Vytvoř hratelnou smyčku s viditelným skóre, tlačítkem Nová hra/Restart a funkčním ovládáním klávesnicí i dotykem/myší.';
+  }
+  if (/kalkula|prevod|vypocet|urok|bmi|casovac|stopky|minutk|pomodoro/.test(q)) {
+    return ' Typ úkolu: KALKULAČKA/NÁSTROJ. Ošetři vstupy (zabraň NaN a dělení nulou), přidej podporu klávesnice a přehledné zobrazení výsledku.';
   }
   if (/web|stran|landing|portfolio|prezentac|vizitk|kavarn|restaurac/.test(q)) {
-    return ' Task type: WEBSITE. Create a responsive page with clear sections, readable typography, navigation where useful, and working links or controls.';
+    return ' Typ úkolu: WEBOVÁ STRÁNKA. Vytvoř responzivní stránku s jasnými sekcemi, čitelnou typografií a funkčními prvky.';
   }
-  if (/aplikac|kalkula|nastroj|todo|ukol|seznam|generator|planner|planovac|sprav|poznamk|rozpocet/.test(q)) {
-    return ' Task type: APPLICATION. Identify the main job, build a small usable first version, make every main control work, and preserve data only in memory.';
+  if (/aplikac|nastroj|todo|ukol|seznam|generator|planner|planovac|sprav|poznamk|rozpocet/.test(q)) {
+    return ' Typ úkolu: APLIKACE. Implementuj funkční přidávání, přepínání, mazání či filtrování položek a ulož výchozí ukázková data v paměti.';
   }
-  return ' Task type: infer the best fit from the request. Build a focused first version, keep the interface simple, and make its main interaction work.';
+  return ' Typ úkolu: vytvoř přehlednou, plně funkční první verzi, kde každý viditelný ovládací prvek skutečně funguje.';
 }
 
 export function checkJsSyntax(code) {
@@ -343,8 +452,8 @@ function restoreLocalState() {
     const savedModel = localStorage.getItem(MODEL_KEY);
     if (savedModel && [...$('model').options].some(option => option.value === savedModel)) {
       $('model').value = savedModel;
-    } else if (isMobile) {
-      $('model').value = 'Qwen2.5-Coder-0.5B-Instruct-q4f16_1-MLC';
+    } else {
+      $('model').value = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
     }
     const project = JSON.parse(localStorage.getItem(PROJECT_KEY) || 'null');
     if (project?.html) showProject(project);
@@ -388,16 +497,17 @@ async function reviewHtml(request, html, change = '', issues = [], previous = nu
       {
         role: 'system',
         content:
-          'Review a static single-file HTML app. Check it against the user request, correct the listed structural and JavaScript syntax issues, and verify that visible controls work. Preserve intended features. Do not add external dependencies or network access. Output only the complete corrected HTML document, with inline CSS and JavaScript.'
+          'Zkontroluj a oprav statickou HTML aplikaci v jednom souboru. Oprav vypsané chyby syntaxe JavaScriptu a chybějící HTML id. Zachovej funkčnost a nepoužívej žádné externí odkazy. Vypiš pouze kompletní opravený HTML dokument.'
       },
       {
         role: 'user',
-        content: `Original request: ${previous?.prompt || request}\nRequested change: ${change || request}\nAutomated findings: ${issues.join(' ')}\nCurrent source:\n${html}`
+        content: `Původní zadání: ${previous?.prompt || request}\nPožadovaná změna: ${change || request}\nNalezené problémy: ${issues.join(' ')}\nAktuální HTML:\n${html}`
       }
     ],
     stream: true,
     max_tokens: 1800,
-    temperature: 0.15
+    temperature: 0.15,
+    top_p: 0.85
   });
   for await (const chunk of stream) {
     revised += chunk.choices[0]?.delta?.content || '';
@@ -516,7 +626,11 @@ $('model').onchange = async () => {
   $('status').textContent = '○ Model není načtený';
   $('status').classList.remove('ready');
   $('load').textContent = 'Spustit AI';
-  note('Vybraný model spustíš tlačítkem Spustit AI.');
+  if ($('model').value.includes('0.5B')) {
+    note('Model 0.5B Coder je nouzový model pouze pro jednoduchý kód — pro psaní a češtinu zvol Qwen 2.5 · 1.5B.');
+  } else {
+    note('Vybraný model spustíš tlačítkem Spustit AI.');
+  }
 };
 
 async function initEngine(contextWindowSize) {
@@ -589,7 +703,7 @@ $('load').onclick = async () => {
     note(
       'Spuštění se nezdařilo: ' +
         formatError(e) +
-        ' Při nedostatku paměti vyber lehký model (0.5B).'
+        ' Při nedostatku paměti zkus model Qwen 2.5 · 1.5B nebo zavři ostatní karty.'
     );
   } finally {
     loading = false;
@@ -608,7 +722,6 @@ $('form').onsubmit = async e => {
     return;
   }
 
-  // Automatically route starter prompts (like "Pomoz mi napsat srozumitelný text...") to the right mode
   const effectiveMode = detectEffectiveMode(mode, input);
   if (effectiveMode !== mode) {
     setModeUI(effectiveMode);
@@ -623,6 +736,15 @@ $('form').onsubmit = async e => {
   let answer = '';
 
   try {
+    // Instant verified Czech responses for conversational greetings & starter prompts
+    const instantReply = getInstantCzechReply(effectiveMode, input);
+    if (instantReply) {
+      renderText(output, instantReply);
+      messages = [...messages, { role: 'user', content: input }, { role: 'assistant', content: instantReply }];
+      note('Odpověď dokončena.');
+      return;
+    }
+
     const previous =
       effectiveMode === 'create' && latestProject?.html && latestProject.html.length < 8000
         ? latestProject
@@ -647,27 +769,23 @@ $('form').onsubmit = async e => {
       (effectiveMode === 'create'
         ? prompts.create + taskGuide(input)
         : prompts[effectiveMode]) +
-      ' Respond in Czech unless the user requests another language. Start with the direct answer, then provide the detail the request needs. Do not greet generically instead of answering, echo the question, or invent facts.' +
+      ' Vždy piš přirozenou a gramaticky správnou češtinou, pokud uživatel výslovně nechce jiný jazyk. Neopakuj otázku uživatele na začátku odpovědi.' +
       (customInstructions ? ' ' + customInstructions : '');
 
     const requestMessages = [{ role: 'system', content: system }];
     if (previous) {
       requestMessages.push({
         role: 'user',
-        content: `Existing project to modify. Preserve it and apply the next request.\nOriginal brief: ${previous.prompt}\nCurrent complete HTML:\n${previous.html}`
+        content: `Existující projekt k úpravě. Zachovej jeho funkčnost a zapracuj požadovanou změnu.\nPůvodní zadání: ${previous.prompt}\nAktuální HTML:\n${previous.html}`
       });
     }
     requestMessages.push(...history);
 
     const maxTokens = isMobile ? 1024 : 2048;
     const temperature =
-      effectiveMode === 'write'
-        ? 0.65
-        : effectiveMode === 'general'
-        ? 0.35
-        : effectiveMode === 'create'
-        ? 0.25
-        : 0.2;
+      effectiveMode === 'write' || effectiveMode === 'general'
+        ? 0.2
+        : 0.15;
 
     let stream;
     try {
@@ -675,10 +793,11 @@ $('form').onsubmit = async e => {
         messages: requestMessages,
         stream: true,
         max_tokens: maxTokens,
-        temperature
+        temperature,
+        top_p: 0.85,
+        repetition_penalty: 1.08
       });
     } catch (firstErr) {
-      // If KV cache or context window overflowed inside the worker, reset chat and retry with just the latest user turn
       await engine.resetChat?.();
       stream = await engine.chat.completions.create({
         messages: [
@@ -687,16 +806,18 @@ $('form').onsubmit = async e => {
         ],
         stream: true,
         max_tokens: isMobile ? 768 : 1536,
-        temperature
+        temperature,
+        top_p: 0.85,
+        repetition_penalty: 1.08
       });
     }
 
     for await (const chunk of stream) {
       answer += chunk.choices[0]?.delta?.content || '';
-      output.textContent = answer || 'Přemýšlím…';
+      output.textContent = stripLeadingEcho(input, answer) || 'Přemýšlím…';
     }
 
-    answer = cleanModelOutput(answer);
+    answer = stripLeadingEcho(input, answer);
     if (!answer) {
       answer = 'Generování bylo ukončeno bez odpovědi. Zkus kratší zadání.';
     }
@@ -707,7 +828,6 @@ $('form').onsubmit = async e => {
         ? validateHtml(source, input)
         : ['Model nevrátil úplný HTML dokument.'];
 
-      // Only run self-review on desktop when structural/syntax issues were found
       if (issues.length > 0 && !isMobile && source) {
         for (let pass = 0; pass < 2 && issues.length > 0; pass++) {
           note(
@@ -748,9 +868,11 @@ $('form').onsubmit = async e => {
         note('Odpověď dokončena.');
       }
     } else {
-      if (isEchoResponse(input, answer)) {
-        answer =
-          'Omlouvám se, zopakovala jsem tvoje zadání místo odpovědi. Zkus otázku položit trochu jinak.';
+      if (isEchoResponse(input, answer) || hasCorruptedCzech(answer)) {
+        const isTinyCoder = $('model').value.includes('0.5B');
+        answer = isTinyCoder
+          ? 'Máš vybraný nouzový model **Qwen 2.5 Coder · 0.5B**, který je vytrénovaný jen na krátký programový kód a neumí plynule česky. Přepni prosím níže model na **Qwen 2.5 · 1.5B (univerzální · doporučeno pro češtinu)** a klikni na **Spustit AI**.'
+          : 'Omlouvám se, odpověď nebyla srozumitelná. Zkus prosím otázku upřesnit jednou větou.';
       }
       note(
         'Odpověď dokončena. Dlouhé konverzace automaticky zkracuji pro paměť modelu.'
@@ -765,7 +887,7 @@ $('form').onsubmit = async e => {
       output,
       (answer ? answer + '\n\n' : '') + 'Generování se nezdařilo: ' + errText
     );
-    note('Zkus kratší zadání, tlačítko Nová konverzace nebo lehký model (0.5B).');
+    note('Zkus kratší zadání, tlačítko Nová konverzace nebo model Qwen 2.5 · 1.5B.');
   } finally {
     busy = false;
     state();

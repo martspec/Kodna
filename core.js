@@ -21,8 +21,10 @@ export function normalizeCz(text) {
 
 export function detectEffectiveMode(selectedMode, input) {
   if (selectedMode !== 'create') return selectedMode;
-  const q = normalizeCz(input);
-  // If user is in 'create' mode but clicked or typed a prompt clearly asking for text, debugging, or a single JS function explanation
+  const q = normalizeCz(input).trim();
+  if (/^(ahoj|cau|zdar|dobry den|zdravim|jak se mas|jak je|kdo jsi|co jsi zac|co umis|jak fungujes|diky|dekuji|pomoc)[?!.\s]*$/.test(q)) {
+    return 'general';
+  }
   if (/pomoz mi napsat srozumitelny text|zeptej na tema a ctenare|napis email|napis clanek|prepis text/.test(q)) {
     return 'write';
   }
@@ -35,27 +37,131 @@ export function detectEffectiveMode(selectedMode, input) {
   return 'create';
 }
 
+export function getInstantCzechReply(effectiveMode, input) {
+  const raw = (input || '').trim();
+  const q = normalizeCz(raw)
+    .replace(/[?!.,;:'"„“()\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!q) return null;
+
+  // 1. Conversational greetings & how-are-you
+  if (/^(ahoj|cau|zdar|nazdar|dobry den|zdravim|hezk[y] den)(\s+jak se mas|\s+kodovno)?$/.test(q)) {
+    return 'Ahoj! Jsem připravená v tvém prohlížeči. S čím ti dnes pomohu — chceš napsat text, zkontrolovat kód, nebo vytvořit aplikaci?';
+  }
+  if (/^(jak se mas|jak se dari|jak je|jak to jde|co delas)$/.test(q)) {
+    return 'Mám se skvěle, děkuji za optání! Běžím přímo u tebe v prohlížeči a jsem připravená pomoct. Na čem dnes budeme pracovat — chceš napsat text, poradit s kódem, nebo vytvořit aplikaci?';
+  }
+  if (/^(kdo jsi|co jsi zac|co jsi|predstav se)$/.test(q)) {
+    return 'Jsem **Kódovna** — tvoje osobní lokální AI dílna. Běžím přímo ve tvém prohlížeči přes WebGPU, takže tvoje texty ani kód nikam na cizí servery neodcházejí.\n\nUmím:\n- **✦ Tvůrce:** vytvořit funkční hru nebo webovou aplikaci v jednom HTML souboru\n- **◈ Asistent:** odpovídat na otázky, vysvětlovat a plánovat\n- **⌘ Kód & ⌕ Ladění:** psát funkce a opravovat chyby v kódu\n- **✎ Psaní:** psát a upravovat srozumitelné české texty';
+  }
+  if (/^(co umis|jak fungujes|s cim mi pomuzes|pomoc)$/.test(q)) {
+    return 'Pomůžu ti s těmito úkoly přímo ve tvém prohlížeči:\n\n1. **Psaní textů (✎ Psaní):** e-maily, články, shrnutí i úpravy stylu.\n2. **Programování (⌘ Kód / ⌕ Ladění):** psaní funkcí, vysvětlení kódu a hledání chyb.\n3. **Tvorba miniaplikací (✦ Tvůrce):** kompletní HTML5 hry, kalkulačky a nástroje s okamžitým náhledem.\n\nNapiš mi, co potřebuješ vytvořit nebo vyřešit!';
+  }
+  if (/^(diky|dekuji|mockrat dekuji|super diky|skvele diky)$/.test(q)) {
+    return 'Rádo se stalo! Kdybys potřeboval cokoliv dalšího upravit nebo napsat, stačí napsat.';
+  }
+
+  // 2. Starter card prompts that ask the assistant to first ask clarifying questions
+  if (q === 'pomoz mi napsat srozumitelny text nejprve se zeptej na tema a ctenare') {
+    return 'Ráda ti pomohu napsat čtivý a srozumitelný text. Aby přesně seděl tvému záměru, napiš mi prosím:\n\n1. **O jaké téma jde?** (Co je hlavní myšlenka nebo sdělení?)\n2. **Kdo bude text číst?** (Zákazníci, kolegové, přátelé, nebo široká veřejnost?)\n3. **Jakou formu a tón potřebuješ?** (Např. krátký e-mail, příspěvek na web, formální či přátelský tón.)';
+  }
+  if (q === 'pomoz mi najit chybu v kodu nejprve me pozadej o kod a chybovou hlasku') {
+    return 'Jdeme na to. Pošli mi prosím:\n\n1. **Ukázku kódu**, ve které problém nastává.\n2. **Přesnou chybovou hlášku** z konzole (nebo popiš, co kód dělá špatně oproti očekávání).\n\nHned ti vysvětlím příčinu chyby a pošlu opravené řešení.';
+  }
+  if (q === 'napis v javascriptu funkci debounce a vysvetli jeji pouziti') {
+    return `Funkce \`debounce\` odloží spuštění předané funkce až na chvíli, kdy uživatel přestane akci opakovat po zadanou dobu (\`delay\`). Hodí se například pro vyhledávací pole při psaní (\`input\`) nebo při změně velikosti okna (\`resize\`), aby se náročná operace nespouštěla při každém stisku klávesy.
+
+\`\`\`javascript
+function debounce(fn, delay = 300) {
+  let timerId = null;
+
+  return function (...args) {
+    const context = this;
+    clearTimeout(timerId);
+    timerId = setTimeout(() => {
+      fn.apply(context, args);
+    }, delay);
+  };
+}
+
+// Příklad použití u vyhledávacího pole:
+const handleSearch = debounce((query) => {
+  console.log('Hledám výraz:', query);
+}, 300);
+
+// Při rychlém psaní se zavolá až 300 ms po posledním znaku:
+// inputElement.addEventListener('input', (e) => handleSearch(e.target.value));
+\`\`\`
+
+**Jak to funguje:**
+- Při každém zavolání \`clearTimeout(timerId)\` zruší předchozí čekající časovač.
+- Nový \`setTimeout\` spustí cílovou funkci \`fn\` teprve tehdy, když po dobu \`delay\` milisekund nepřijde žádné další volání.`;
+  }
+
+  return null;
+}
+
+export function hasCorruptedCzech(text) {
+  if (!text) return false;
+  const q = normalizeCz(text);
+  // Detect typical 0.5B code-model Czech hallucinations & machine-translation artifacts
+  if (
+    /vyskytnuteln|vyslovan|umeteln|google translate|jazykove preklad|spravnim pripadem|vykonem vice informaci/.test(
+      q
+    )
+  ) {
+    return true;
+  }
+  // Detect unexpected CJK ideographs leaked by tiny Qwen models in Czech answers
+  if (/[\u4e00-\u9fff]{2,}/.test(text)) {
+    return true;
+  }
+  return false;
+}
+
 export function taskGuide(input) {
   const q = normalizeCz(input);
   if (/hra|herni|tetris|had|snake|pexeso|skore|arkanoid|pong|flappy|skakac|piskvork|minolovka|2048|kviz/.test(q)) {
-    return ' Task type: GAME. Build a playable loop with visible score/status, New Game/Restart button, and working keyboard + click/touch controls.';
+    return ' Typ úkolu: HRA. Vytvoř hratelnou smyčku s viditelným skóre, tlačítkem Nová hra/Restart a funkčním ovládáním klávesnicí i dotykem/myší.';
   }
   if (/kalkula|prevod|vypocet|urok|bmi|casovac|stopky|minutk|pomodoro/.test(q)) {
-    return ' Task type: CALCULATOR/TOOL. Validate inputs (prevent NaN/division by zero), support keyboard input, and show clear results.';
+    return ' Typ úkolu: KALKULAČKA/NÁSTROJ. Ošetři vstupy (zabraň NaN a dělení nulou), přidej podporu klávesnice a přehledné zobrazení výsledku.';
   }
   if (/web|stran|landing|portfolio|prezentac|vizitk|kavarn|restaurac/.test(q)) {
-    return ' Task type: WEBSITE. Create a responsive page with clear sections, readable typography, and interactive controls/forms.';
+    return ' Typ úkolu: WEBOVÁ STRÁNKA. Vytvoř responzivní stránku s jasnými sekcemi, čitelnou typografií a funkčními prvky.';
   }
   if (/aplikac|nastroj|todo|ukol|seznam|generator|planner|planovac|sprav|poznamk|rozpocet/.test(q)) {
-    return ' Task type: APPLICATION. Implement working add/toggle/delete/filter controls and keep state in memory with initial sample items.';
+    return ' Typ úkolu: APLIKACE. Implementuj funkční přidávání, přepínání, mazání či filtrování položek a ulož výchozí ukázková data v paměti.';
   }
-  return ' Task type: infer the best fit from the request. Build a focused, complete version where every visible control works.';
+  return ' Typ úkolu: vytvoř přehlednou, plně funkční první verzi, kde každý viditelný ovládací prvek skutečně funguje.';
 }
 
 export function cleanModelOutput(text) {
   if (!text) return '';
   let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   cleaned = cleaned.replace(/^<think>/i, '').trim();
+  return cleaned;
+}
+
+export function stripLeadingEcho(input, answer) {
+  const cleaned = cleanModelOutput(answer);
+  const rawInput = (input || '').trim();
+  if (!cleaned || !rawInput || rawInput.length < 3) return cleaned;
+
+  const escaped = rawInput
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+');
+  // Match optional "Otázka:" / "Dotaz:" prefix + exact user input + punctuation at the very beginning, followed by more text
+  const prefixRegex = new RegExp(
+    `^(?:(?:otazka|otázka|dotaz|zadani|zadání|user|ty)\\s*:\\s*)?["„“']?${escaped}["„“']?[?!.:;\\-–—]*\\s+(?:(?:odpoved|odpověď)\\s*:\\s*)?([\\s\\S]+)$`,
+    'i'
+  );
+  const match = cleaned.match(prefixRegex);
+  if (match && match[1] && match[1].trim().length > 0) {
+    return match[1].trim();
+  }
   return cleaned;
 }
 
